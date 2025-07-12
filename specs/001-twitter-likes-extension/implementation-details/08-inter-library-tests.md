@@ -7,11 +7,13 @@
 - DOM manipulation and x.com integration
 - Like button detection and click handling
 - Post content extraction and screenshot capture
-- Direct SQLite database writes
+- HTTP API communication to Laravel backend
 - User feedback and status display
 
 ### Laravel Backend Library  
 **Responsibilities:**
+- HTTP API endpoints for extension communication
+- SQLite database storage and management
 - Data processing and enrichment
 - Thread relationship analysis
 - Content clustering and AI preparation
@@ -24,14 +26,14 @@
 
 #### Test: Single Post Like-to-Database Journey
 ```
-GIVEN: User on x.com with extension loaded
+GIVEN: User on x.com with extension loaded AND Laravel backend running
 WHEN: User clicks like button on a standard tweet
 THEN:
   1. Extension detects like click (Safari extension)
   2. Post content extracted from DOM (Safari extension)
   3. Screenshot captured of post area (Safari extension)
-  4. Data written to SQLite database (Safari extension)
-  5. Laravel can read and process the data (Laravel backend)
+  4. Data sent via HTTP POST to Laravel API (Safari extension)
+  5. Laravel receives and stores data in SQLite database (Laravel backend)
   6. Thread relationships analyzed if applicable (Laravel backend)
   7. CLI status command shows new post (Laravel backend)
 ```

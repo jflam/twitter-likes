@@ -5,6 +5,7 @@ Communication between Safari extension and Laravel backend occurs through:
 1. **HTTP API Requests** (localhost:8000) - Extension to Laravel
 2. **Laravel Artisan CLI Commands** (for processing and analysis)
 3. **SQLite Database** (Laravel manages all database operations)
+4. **CORS Configuration** (Required for Safari extension communication)
 
 ## HTTP API Interface Contract
 
@@ -205,51 +206,39 @@ php artisan posts:status [--format=json]
 }
 ```
 
-## File-based Message Queue Contract
+## CORS Configuration Contract
 
-### Extension → Laravel Messages
+### Laravel CORS Middleware Setup
+**Required for Safari Extension Communication**
 
-#### Capture Request Message
-**File Path**: `storage/extension/capture-queue/capture-{timestamp}-{uuid}.json`
-**Format**:
-```json
-{
-  "operation": "capture_post",
-  "timestamp": "iso-datetime",
-  "data": {
-    "tweet_id": "string",
-    "content": "...",
-    "screenshot_path": "path/to/screenshot.png"
-  }
-}
+#### CORS Headers Required
+```php
+// config/cors.php
+'allowed_origins' => ['http://localhost:*', 'https://localhost:*'],
+'allowed_methods' => ['GET', 'POST', 'DELETE', 'OPTIONS'],
+'allowed_headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
+'exposed_headers' => [],
+'max_age' => 0,
+'supports_credentials' => false,
 ```
 
-#### Processing Status Request
-**File Path**: `storage/extension/status-requests/status-{uuid}.json`
-**Format**:
-```json
-{
-  "operation": "get_status",
-  "request_id": "uuid",
-  "requested_at": "iso-datetime"
-}
+#### API Routes Configuration
+```php
+// routes/api.php  
+Route::middleware(['cors'])->group(function () {
+    Route::post('/posts/capture', [PostController::class, 'capture']);
+    Route::delete('/posts/unlike', [PostController::class, 'unlike']);
+    Route::get('/posts/status', [PostController::class, 'status']);
+});
 ```
 
-### Laravel → Extension Messages
-
-#### Processing Result
-**File Path**: `storage/extension/results/result-{request-id}.json`
-**Format**:
+#### Safari Extension Manifest Permissions
 ```json
 {
-  "request_id": "uuid",
-  "status": "success|error",
-  "timestamp": "iso-datetime",
-  "data": {
-    "posts_processed": 5,
-    "relationships_created": 2,
-    "errors": []
-  }
+  "permissions": [
+    "http://localhost:8000/*",
+    "https://localhost:8000/*"
+  ]
 }
 ```
 

@@ -104,10 +104,10 @@ document.addEventListener('click', function(e) {
 4. **Background Script** captures visible area screenshot
 
 ### Phase 2: Data Transfer
-1. **Background Script** sends data to Native macOS App via native messaging
-2. **Native App** writes screenshot to local file system
-3. **Native App** inserts post data into SQLite database
-4. **Native App** notifies Laravel via HTTP API call
+1. **Background Script** sends HTTP POST request to Laravel API (localhost:8000)
+2. **Laravel API** receives post data and base64 screenshot
+3. **Laravel** stores data in SQLite database and saves screenshot file
+4. **Laravel** returns success/error response to extension
 
 ### Phase 3: Processing
 1. **Laravel Backend** processes new posts via CLI commands
@@ -118,13 +118,13 @@ document.addEventListener('click', function(e) {
 
 ### Safari Extension Components
 - **Content Script**: DOM interaction, content extraction, event handling
-- **Background Script**: Screenshot capture, native messaging coordination
-- **Native Messaging Host**: macOS app bridge for file system access
+- **Background Script**: Screenshot capture, HTTP API communication
+- **Manifest**: CORS permissions for localhost Laravel API
 
-### Native macOS App Requirements
-- **Native Messaging Protocol**: Communication with Safari extension
-- **SQLite Database Access**: Direct database operations
-- **HTTP Client**: Communication with Laravel API
+### Laravel Backend Requirements
+- **HTTP API Endpoints**: Receive extension data via POST requests
+- **CORS Middleware**: Enable Safari extension communication
+- **SQLite Database**: Store post data and metadata
 - **File System Operations**: Screenshot storage, data export
 
 ### Laravel Backend Components

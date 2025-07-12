@@ -58,7 +58,7 @@ When generating this plan from a feature spec:
 
 ## Executive Summary *(mandatory)*
 
-A Safari browser extension written in plain JavaScript that automatically captures Twitter/X posts when users like them, storing content and screenshots in a local SQLite database via Laravel backend for AI-powered analysis and associative memory retrieval.
+A Safari browser extension written in plain JavaScript that automatically captures Twitter/X posts when users like them, sending content and screenshots to a Laravel backend via HTTP API for storage and AI-powered analysis and associative memory retrieval.
 
 ## Requirements *(mandatory)*
 
@@ -92,7 +92,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
 - **CLI Interfaces**: 
   - Laravel: `php artisan posts:process`, `posts:status`, `posts:export`, `posts:cleanup`
 - **CLI Standards**: All CLIs implement --help, --version, --format
-- **Inter-Library Contracts**: HTTP API (Extension ↔ Laravel via localhost)
+- **Inter-Library Contracts**: HTTP API (Extension → Laravel via localhost:8000)
 
 ### Observability (Article V)
 - [x] Structured logging planned (Laravel logging for backend, Safari console for extension)
@@ -248,9 +248,13 @@ A Safari browser extension written in plain JavaScript that automatically captur
    ```pseudocode
    Create Laravel application with database migrations
    Implement Eloquent models: LikedPost, PostScreenshot, ThreadRelationship, CaptureSession
+   Configure CORS for Safari extension communication (localhost origins)
+   Implement HTTP API endpoints for extension communication
    Implement Artisan CLI commands: posts:process, posts:status, posts:export, posts:cleanup
    ```
    - Use Laravel migrations to match database contract exactly
+   - Configure CORS middleware for Safari extension origins (localhost:*, file://)
+   - Implement API routes with validation and rate limiting
    - Implement CLI commands to pass interface contract tests
    - Add structured logging and error handling
    *Detailed models and relationships: implementation-details/02-data-model.md*
@@ -275,9 +279,9 @@ A Safari browser extension written in plain JavaScript that automatically captur
 
 3. **Integration Implementation**
    ```pseudocode
-   Connect Safari extension to shared SQLite database
-   Implement file-based status communication between components
-   Add concurrent access handling (SQLite locking)
+   Verify Safari extension → Laravel HTTP API communication
+   Implement error handling and retry logic for API failures
+   Add request validation and rate limiting
    Verify integration tests pass end-to-end
    ```
 
