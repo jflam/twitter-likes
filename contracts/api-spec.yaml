@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: Twitter Likes Extension API
+  description: API contract between Safari Extension and Laravel Backend
+  version: 1.0.0
+  contact:
+    name: Twitter Likes Extension API
+servers:
+  - url: http://localhost:8000/api
+    description: Local Laravel backend
+
+paths:
+  /posts/capture:
+    post:
+      summary: Capture a liked post with content and screenshot
+      description: Stores a Twitter/X post that was liked by the user, including metadata and screenshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaptureRequest'
+      responses:
+        '200':
+          description: Post captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaptureSuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Post already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/unlike:
+    delete:
+      summary: Delete a post when user unlikes it
+      description: Removes a previously captured post and associated data when user unlikes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnlikeRequest'
+      responses:
+        '200':
+          description: Post deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlikeSuccessResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/status:
+    get:
+      summary: Get extension status and statistics
+      description: Returns current status of the backend and capture statistics
+      responses:
+        '200':
+          description: Status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CaptureRequest:
+      type: object
+      required:
+        - tweet_id
+        - author_username
+        - author_display_name
+        - content_text
+        - post_url
+        - posted_at
+        - liked_at
+        - post_type
+      properties:
+        tweet_id:
+          type: string
+          description: Unique identifier for the tweet on X.com
+          example: "1234567890123456789"
+        author_username:
+          type: string
+          description: Username of the post author (without @)
+          example: "username"
+        author_display_name:
+          type: string
+          description: Display name of the post author
+          example: "Display Name"
+        author_avatar_url:
+          type: string
+          nullable: true
+          description: URL to author's profile image
+          example: "https://pbs.twimg.com/profile_images/..."
+        content_text:
+          type: string
+          description: Plain text content of the post
+          example: "This is the tweet content"
+        content_html:
+          type: string
+          nullable: true
+          description: HTML formatted content with links and formatting
+          example: "This is the <strong>tweet</strong> content"
+        post_url:
+          type: string
+          description: Full URL to the original post
+          example: "https://x.com/username/status/1234567890123456789"
+        posted_at:
+          type: string
+          format: date-time
+          description: When the original post was created (ISO 8601)
+          example: "2025-07-12T10:30:00Z"
+        liked_at:
+          type: string
+          format: date-time
+          description: When the user liked the post (ISO 8601)
+          example: "2025-07-12T14:30:00Z"
+        post_type:
+          type: string
+          enum: [original, retweet, quote_tweet, reply]
+          description: Type of post
+          example: "original"
+        like_count:
+          type: integer
+          minimum: 0
+          description: Number of likes on the post
+          example: 42
+        retweet_count:
+          type: integer
+          minimum: 0
+          description: Number of retweets on the post
+          example: 12
+        reply_count:
+          type: integer
+          minimum: 0
+          description: Number of replies to the post
+          example: 5
+        view_count:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Number of views (if available)
+          example: 1000
+        screenshot_base64:
+          type: string
+          nullable: true
+          description: Base64 encoded screenshot of the post
+          example: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        screenshot_width:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Width of screenshot in pixels
+          example: 600
+        screenshot_height:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Height of screenshot in pixels
+          example: 400
+        thread_context:
+          type: array
+          nullable: true
+          description: Context of thread relationships
+          items:
+            $ref: '#/components/schemas/ThreadContext'
+
+    ThreadContext:
+      type: object
+      required:
+        - tweet_id
+        - content_text
+        - author_username
+        - relationship
+      properties:
+        tweet_id:
+          type: string
+          description: Tweet ID of related post
+          example: "1234567890123456788"
+        content_text:
+          type: string
+          description: Content of related post
+          example: "This is the parent tweet"
+        author_username:
+          type: string
+          description: Username of related post author
+          example: "parentuser"
+        relationship:
+          type: string
+          enum: [parent, root, child]
+          description: Relationship to the main post
+          example: "parent"
+
+    UnlikeRequest:
+      type: object
+      required:
+        - tweet_id
+      properties:
+        tweet_id:
+          type: string
+          description: Tweet ID to unlike and delete
+          example: "1234567890123456789"
+
+    CaptureSuccessResponse:
+      type: object
+      required:
+        - status
+        - post_id
+        - screenshot_saved
+        - thread_relationships_created
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        post_id:
+          type: string
+          description: UUID of the created post record
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        screenshot_saved:
+          type: boolean
+          description: Whether screenshot was successfully saved
+          example: true
+        thread_relationships_created:
+          type: integer
+          minimum: 0
+          description: Number of thread relationships created
+          example: 2
+
+    UnlikeSuccessResponse:
+      type: object
+      required:
+        - status
+        - deleted
+        - screenshot_removed
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        deleted:
+          type: boolean
+          description: Whether post was successfully deleted
+          example: true
+        screenshot_removed:
+          type: boolean
+          description: Whether associated screenshot was removed
+          example: true
+
+    StatusResponse:
+      type: object
+      required:
+        - status
+        - stats
+        - server_status
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        stats:
+          $ref: '#/components/schemas/Stats'
+        server_status:
+          type: string
+          enum: [healthy, degraded, error]
+          description: Current server health status
+          example: "healthy"
+
+    Stats:
+      type: object
+      required:
+        - total_posts
+        - unprocessed_posts
+        - screenshot_count
+        - thread_relationships
+      properties:
+        total_posts:
+          type: integer
+          minimum: 0
+          description: Total number of captured posts
+          example: 1234
+        unprocessed_posts:
+          type: integer
+          minimum: 0
+          description: Number of posts awaiting processing
+          example: 5
+        screenshot_count:
+          type: integer
+          minimum: 0
+          description: Total number of screenshots stored
+          example: 1200
+        thread_relationships:
+          type: integer
+          minimum: 0
+          description: Number of thread relationships mapped
+          example: 89
+        last_capture:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of most recent capture
+          example: "2025-07-12T14:30:00Z"
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+        - error_code
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: "error"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Tweet already exists"
+        error_code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - DUPLICATE_TWEET
+            - POST_NOT_FOUND
+            - INVALID_REQUEST
+            - SCREENSHOT_SAVE_FAILED
+            - DATABASE_ERROR
+            - SERVER_ERROR
+          example: "DUPLICATE_TWEET"
+        details:
+          type: object
+          nullable: true
+          description: Additional error details
+          additionalProperties: true
