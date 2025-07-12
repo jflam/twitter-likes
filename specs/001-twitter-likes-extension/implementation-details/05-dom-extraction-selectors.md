@@ -1,275 +1,149 @@
-# DOM Extraction Selectors for Twitter/X Content
+# DOM Extraction Selectors
 
-## Overview
-This document provides the exact DOM selectors needed to extract tweet content, author information, and metadata from X.com's current HTML structure (validated 2025-07-12).
+## Essential Selectors for Implementation
 
-## Primary Tweet Container
-**Main Container**: `[data-testid="tweet"]`
-```html
-<article data-testid="tweet" role="article">
-  <!-- All tweet content is contained within this element -->
-</article>
+### Tweet Container
+```javascript
+const tweetContainer = likeButton.closest('[data-testid="tweet"]');
 ```
 
-## Author Information Extraction
+### Author Information
+```javascript
+// Display name
+const displayName = tweetContainer.querySelector('[data-testid="User-Name"] span')?.textContent;
 
-### Display Name
-**Selector**: `[data-testid="User-Name"] span`
-**HTML Pattern**:
-```html
-<div data-testid="User-Name">
-  <div class="css-175oi2r r-1awozwy r-18u37iz r-1wbh5a2 r-dnmrzs">
-    <div class="css-175oi2r r-1wbh5a2 r-dnmrzs">
-      <a href="/dhh">
-        <span>DHH</span> <!-- Display Name -->
-      </a>
-    </div>
-  </div>
-</div>
+// Username (remove @ and leading slash)
+const usernameLink = tweetContainer.querySelector('[data-testid="User-Name"] a[href^="/"]');
+const username = usernameLink?.getAttribute('href')?.substring(1);
+
+// Avatar URL
+const avatarImg = tweetContainer.querySelector('[data-testid="Tweet-User-Avatar"] img');
+const avatarUrl = avatarImg?.getAttribute('src');
+
+// Verified badge
+const isVerified = !!tweetContainer.querySelector('[data-testid="icon-verified"]');
 ```
 
-### Username (@handle)
-**Selector**: `[data-testid="User-Name"] a[href^="/"]`
-**Extract**: `href` attribute (remove leading slash)
-**HTML Pattern**:
-```html
-<a href="/dhh">  <!-- Username: dhh -->
-  <span>@dhh</span>
-</a>
+### Tweet Content
+```javascript
+// Tweet text
+const contentText = tweetContainer.querySelector('[data-testid="tweetText"]')?.textContent;
+
+// Tweet URL and ID  
+const timeElement = tweetContainer.querySelector('time[datetime]');
+const tweetUrl = timeElement?.closest('a')?.getAttribute('href');
+const tweetId = tweetUrl?.match(/\/status\/(\d+)/)?.[1];
+
+// Timestamp
+const timestamp = timeElement?.getAttribute('datetime');
 ```
 
-### Avatar URL
-**Selector**: `[data-testid="Tweet-User-Avatar"] img`
-**Extract**: `src` attribute
-**HTML Pattern**:
-```html
-<div data-testid="Tweet-User-Avatar">
-  <img src="https://pbs.twimg.com/profile_images/1746980162607140864/fG9Fj4K__x96.jpg" />
-</div>
+### Engagement Metrics
+```javascript
+// Extract counts from buttons
+const getCount = (testId) => {
+  const button = tweetContainer.querySelector(`[data-testid="${testId}"]`);
+  const countText = button?.querySelector('span:last-child span')?.textContent;
+  return countText ? parseInt(countText.replace(/[^\d]/g, '')) || 0 : 0;
+};
+
+const replyCount = getCount('reply');
+const retweetCount = getCount('retweet');  
+const likeCount = getCount('like') || getCount('unlike');
+const bookmarkCount = getCount('bookmark');
+
+// View count (special handling)
+const viewsText = Array.from(tweetContainer.querySelectorAll('span'))
+  .find(span => span.textContent.includes('Views'))?.previousElementSibling?.textContent;
+const viewCount = viewsText ? parseInt(viewsText.replace(/[^\d]/g, '')) || 0 : 0;
 ```
 
-### Verified Badge Detection
-**Selector**: `[data-testid="icon-verified"]`
-**Detection**: Element exists = verified account
-**HTML Pattern**:
-```html
-<svg data-testid="icon-verified" aria-label="Verified account">
-  <!-- Verification checkmark -->
-</svg>
-```
-
-## Tweet Content Extraction
-
-### Main Tweet Text
-**Selector**: `[data-testid="tweetText"]`
-**Extract**: `textContent` for plain text, `innerHTML` for formatted
-**HTML Pattern**:
-```html
-<div data-testid="tweetText">
-  <span>We gotta do OmacomCon at some point. Leveling up on Linux, ricing, bash, and Arch is such a fun journey that it should be shared with friends!</span>
-</div>
-```
-
-### Tweet URL and ID
-**Selector**: `[data-testid="tweetText"] ~ * time[datetime]`
-**Extract**: Closest `<a>` element's `href` attribute
-**HTML Pattern**:
-```html
-<a href="/dhh/status/1944066613197910157">
-  <time datetime="2025-07-12T16:09:34.000Z">12:09 PM · Jul 12, 2025</time>
-</a>
-```
-**Tweet ID Extraction**: Extract from URL pattern `/status/([0-9]+)`
-
-### Timestamp
-**Selector**: `time[datetime]`
-**Extract**: `datetime` attribute (ISO format)
-**HTML Pattern**:
-```html
-<time datetime="2025-07-12T16:09:34.000Z">
-  12:09 PM · Jul 12, 2025
-</time>
-```
-
-## Engagement Metrics Extraction
-
-### Reply Count
-**Selector**: `[data-testid="reply"] span:last-child span`
-**HTML Pattern**:
-```html
-<button data-testid="reply" aria-label="12 Replies. Reply">
-  <span>12</span> <!-- Reply count -->
-</button>
-```
-
-### Retweet Count  
-**Selector**: `[data-testid="retweet"] span:last-child span`
-**HTML Pattern**:
-```html
-<button data-testid="retweet" aria-label="9 reposts. Repost">
-  <span>9</span> <!-- Retweet count -->
-</button>
-```
-
-### Like Count
-**Selector**: `[data-testid="like"] span:last-child span`
-**HTML Pattern**:
-```html
-<button data-testid="like" aria-label="229 Likes. Like">
-  <span>229</span> <!-- Like count -->
-</button>
-```
-
-### View Count
-**Selector**: Look for "Views" text and extract adjacent number
-**HTML Pattern**:
-```html
-<span>14.3K</span> <span>Views</span>
-```
-
-### Bookmark Count
-**Selector**: `[data-testid="bookmark"] span:last-child span`
-**HTML Pattern**:
-```html
-<button data-testid="bookmark" aria-label="7 Bookmarks. Bookmark">
-  <span>7</span> <!-- Bookmark count -->
-</button>
-```
-
-## Like Button State Detection
-
-### Unliked State (Target for Detection)
-**Selector**: `[data-testid="like"]`
-**Aria-label**: Contains "Like" (not "Liked")
-**HTML Pattern**:
-```html
-<button data-testid="like" aria-label="229 Likes. Like">
-  <!-- Hollow heart SVG -->
-</button>
-```
-
-### Liked State (After Click)
-**Selector**: `[data-testid="unlike"]`
-**Aria-label**: Contains "Liked"
-**HTML Pattern**:
-```html
-<button data-testid="unlike" aria-label="230 Likes. Liked">
-  <!-- Filled heart SVG -->
-</button>
-```
-
-## Post Type Detection
-
-### Original Tweet
-**Detection**: No retweet indicators, no quote tweet structure
-**Pattern**: Direct content in `[data-testid="tweetText"]`
-
-### Reply Tweet
-**Detection**: Look for reply context or thread indicators
-**Selector**: Check for thread structure above tweet content
-
-### Retweet
-**Detection**: Look for "retweeted" or retweet attribution
-**Pattern**: Author info differs from retweeter info
-
-### Quote Tweet
-**Detection**: Contains embedded tweet structure
-**Pattern**: Multiple `[data-testid="tweetText"]` elements
-
-## Thread Detection
-
-### Thread Indicators
-**Selector**: Multiple `[data-testid="tweet"]` elements in sequence
-**Pattern**: URL contains `/status/` indicating thread view
-**Detection**: `window.location.href.includes('/status/')`
-
-### Thread Position
-**Method**: Count position within thread container
-**Pattern**: Analyze DOM order of tweet containers
-
-## Media Content Detection
-
-### Images
-**Selector**: `[data-testid="tweetPhoto"]` or `img` within tweet container
-**Extract**: `src` attributes for image URLs
-
-### Videos
-**Selector**: `[data-testid="videoComponent"]` or `video` elements
-**Extract**: Video metadata and thumbnail URLs
-
-### Links
-**Selector**: `a[href]` within `[data-testid="tweetText"]`
-**Extract**: `href` attributes for external links
-
-## Extraction Function Structure
+## Complete Extraction Function
 
 ```javascript
-function extractTweetData(tweetElement) {
-  const tweetContainer = tweetElement.closest('[data-testid="tweet"]');
-  
-  return {
-    // Author Info
-    author_username: extractUsername(tweetContainer),
-    author_display_name: extractDisplayName(tweetContainer),
-    author_avatar_url: extractAvatarUrl(tweetContainer),
-    is_verified: hasVerifiedBadge(tweetContainer),
-    
-    // Content
-    content_text: extractTweetText(tweetContainer),
-    content_html: extractTweetHTML(tweetContainer),
-    
-    // Metadata
-    tweet_id: extractTweetId(tweetContainer),
-    post_url: extractPostUrl(tweetContainer),
-    posted_at: extractTimestamp(tweetContainer),
-    
-    // Engagement
-    reply_count: extractReplyCount(tweetContainer),
-    retweet_count: extractRetweetCount(tweetContainer),
-    like_count: extractLikeCount(tweetContainer),
-    view_count: extractViewCount(tweetContainer),
-    bookmark_count: extractBookmarkCount(tweetContainer),
-    
-    // Type Classification
-    post_type: classifyPostType(tweetContainer),
-    is_thread_post: isPartOfThread(tweetContainer),
-    
-    // Media
-    media_urls: extractMediaUrls(tweetContainer),
-    external_links: extractExternalLinks(tweetContainer)
+function extractTweetData(likeButton) {
+  const tweetContainer = likeButton.closest('[data-testid="tweet"]');
+  if (!tweetContainer) return null;
+
+  // Helper function for engagement counts
+  const getCount = (testId) => {
+    const button = tweetContainer.querySelector(`[data-testid="${testId}"]`);
+    const countText = button?.querySelector('span:last-child span')?.textContent;
+    return countText ? parseInt(countText.replace(/[^\d]/g, '')) || 0 : 0;
   };
+
+  // Extract all required data
+  const displayName = tweetContainer.querySelector('[data-testid="User-Name"] span')?.textContent;
+  const usernameLink = tweetContainer.querySelector('[data-testid="User-Name"] a[href^="/"]');
+  const username = usernameLink?.getAttribute('href')?.substring(1);
+  const avatarImg = tweetContainer.querySelector('[data-testid="Tweet-User-Avatar"] img');
+  const contentText = tweetContainer.querySelector('[data-testid="tweetText"]')?.textContent;
+  const timeElement = tweetContainer.querySelector('time[datetime]');
+  const tweetUrl = timeElement?.closest('a')?.getAttribute('href');
+  const tweetId = tweetUrl?.match(/\/status\/(\d+)/)?.[1];
+
+  return {
+    // Required fields
+    tweet_id: tweetId,
+    author_username: username,
+    author_display_name: displayName,
+    author_avatar_url: avatarImg?.getAttribute('src'),
+    content_text: contentText,
+    content_html: tweetContainer.querySelector('[data-testid="tweetText"]')?.innerHTML,
+    post_url: tweetUrl ? `https://x.com${tweetUrl}` : null,
+    posted_at: timeElement?.getAttribute('datetime'),
+    liked_at: new Date().toISOString(),
+    
+    // Engagement metrics
+    reply_count: getCount('reply'),
+    retweet_count: getCount('retweet'),
+    like_count: getCount('like') || getCount('unlike'),
+    bookmark_count: getCount('bookmark'),
+    
+    // Post type detection
+    post_type: detectPostType(tweetContainer),
+    is_verified: !!tweetContainer.querySelector('[data-testid="icon-verified"]')
+  };
+}
+
+function detectPostType(tweetContainer) {
+  // Simple post type detection logic
+  const tweetText = tweetContainer.querySelector('[data-testid="tweetText"]');
+  if (!tweetText) return 'unknown';
+  
+  // Check for quote tweet structure (contains embedded tweet)
+  if (tweetContainer.querySelectorAll('[data-testid="tweetText"]').length > 1) {
+    return 'quote_tweet';
+  }
+  
+  // Check for reply indicators
+  if (tweetContainer.textContent.includes('Replying to')) {
+    return 'reply';
+  }
+  
+  return 'original';
 }
 ```
 
-## Error Handling & Fallbacks
+## Error Handling
+```javascript
+// Validation before sending to API
+function validateTweetData(data) {
+  const required = ['tweet_id', 'author_username', 'content_text'];
+  return required.every(field => data[field] && data[field].trim().length > 0);
+}
+```
 
-### Missing Elements
-- **Strategy**: Return `null` or default values for missing data
-- **Required Fields**: Author username, tweet text, timestamp
-- **Optional Fields**: Engagement counts, media, verification status
-
-### Selector Changes
-- **Primary Strategy**: Use `data-testid` attributes (most stable)
-- **Fallback Strategy**: Use `aria-label` attributes and text content
-- **Last Resort**: CSS class patterns (least stable)
-
-### Data Validation
-- **Tweet ID**: Must be numeric string
-- **Timestamps**: Must be valid ISO datetime
-- **URLs**: Must be valid HTTP/HTTPS URLs
-- **Counts**: Must be non-negative integers
-
-## Testing Validation
-
-The selectors documented above have been validated against:
-- ✅ Regular tweets
-- ✅ Verified account tweets  
-- ✅ Tweets with engagement metrics
-- ✅ Current X.com DOM structure (2025-07-12)
-
-## Notes
-
-- **Stability**: `data-testid` attributes are most reliable for long-term stability
-- **Performance**: Cache DOM queries within extraction function
-- **Updates**: Monitor for X.com DOM changes that may break selectors
-- **Robustness**: Implement multiple fallback strategies for critical data
+## Usage in Content Script
+```javascript
+document.addEventListener('click', function(e) {
+  const likeButton = e.target.closest('[data-testid="like"]');
+  if (likeButton) {
+    const tweetData = extractTweetData(likeButton);
+    if (validateTweetData(tweetData)) {
+      // Send to Laravel API
+      sendToLaravelAPI(tweetData);
+    }
+  }
+});
+```
