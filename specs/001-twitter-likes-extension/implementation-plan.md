@@ -210,13 +210,18 @@ A Safari browser extension written in plain JavaScript that automatically captur
    ```
    *Details: implementation-details/02-data-model.md*
 
-2. **Write Contract Tests**
+2. **Write Contract Tests (RED-GREEN-REFACTOR Pattern)**
    ```pseudocode
    Create Laravel migration tests that verify schema matches contract
    Create database operation tests (CRUD for each entity)
    Create CLI command interface tests
-   These must fail (no implementation yet)
+   These MUST fail initially (RED) - no implementation yet
    ```
+   **CRITICAL: Follow RED-GREEN-REFACTOR religiously**
+   - Write failing tests first (RED)
+   - Implement minimal code to make tests pass (GREEN)  
+   - Refactor while keeping tests passing (REFACTOR)
+   - Run tests after every change
    *Detailed test scenarios: implementation-details/06-contract-tests.md*
 
 3. **Design Integration Tests**
@@ -236,17 +241,18 @@ A Safari browser extension written in plain JavaScript that automatically captur
 
 ### Verification: Phase 0 Complete *(execution checkpoint)*
 - [ ] Database schema contract exists in `/contracts/database-schema.sql`
-- [ ] Laravel migration tests written and failing
-- [ ] CLI command contract tests written and failing
+- [ ] Laravel migration tests written and **FAILING** (RED state confirmed)
+- [ ] CLI command contract tests written and **FAILING** (RED state confirmed)
 - [ ] Integration test plan documented with specific scenarios
 - [ ] Manual testing guide created with user story mapping
+- [ ] Test runner configured and all tests **FAILING** as expected
 
 ### Phase 1: Core Implementation
 
 **Prerequisites** *(for execution)*: Phase 0 verification complete
 **Deliverables** *(from execution)*: Working implementation passing all contract tests
 
-1. **Laravel Backend Implementation**
+1. **Laravel Backend Implementation (RED-GREEN-REFACTOR)**
    ```pseudocode
    Create Laravel application with database migrations
    Implement Eloquent models: LikedPost, PostScreenshot, ThreadRelationship, CaptureSession
@@ -254,6 +260,11 @@ A Safari browser extension written in plain JavaScript that automatically captur
    Implement HTTP API endpoints for extension communication
    Implement Artisan CLI commands: posts:process, posts:status, posts:export, posts:cleanup
    ```
+   **TESTING WORKFLOW:**
+   1. Run failing tests (RED) → implement minimal code → tests pass (GREEN) → refactor (REFACTOR)
+   2. Run `php artisan test` after every change
+   3. Never commit code with failing tests (unless intentionally RED state)
+   
    - Use Laravel migrations to match database contract exactly
    - Configure CORS middleware for Safari extension origins (install: `composer require fruitcake/laravel-cors`)
    - Implement API routes with validation and rate limiting
@@ -278,6 +289,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
    - Add user feedback for capture success/failure
    - Handle x.com DOM variations with fallback selectors
    *Complete DOM extraction methods: implementation-details/05-dom-extraction-selectors.md*
+   *Like button detection validation: implementation-details/04-like-button-detection-experiments.md*
 
 3. **Integration Implementation**
    ```pseudocode
@@ -314,10 +326,12 @@ A Safari browser extension written in plain JavaScript that automatically captur
    - Document any issues found and resolution
 
 ### Verification: Phase 2 Complete *(execution checkpoint)*
-- [ ] All tests passing (contract, integration, unit)
+- [ ] **ALL TESTS PASSING** (contract, integration, unit) - GREEN state confirmed
+- [ ] `php artisan test` and extension tests run successfully  
 - [ ] Manual testing completed successfully for all user stories
 - [ ] Performance metrics meet async response requirement
 - [ ] Documentation updated and accurate
+- [ ] No failing tests in any component - production ready
 
 ---
 
@@ -325,7 +339,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
 
 1. **Constitutional**: All gates passed, no unjustified complexity
 2. **Functional**: All 16 functional requirements (FR-001 through FR-016) implemented and verified
-3. **Testing**: Contract tests verify database schema, integration tests verify extension ↔ Laravel communication
+3. **Testing**: Contract tests verify database schema, integration tests verify extension ↔ Laravel communication, RED-GREEN-REFACTOR pattern followed throughout
 4. **Performance**: Like click triggers immediate async API call, 99% capture success rate achieved
 5. **Simplicity**: Two libraries only, direct framework usage, no unnecessary abstractions
 
