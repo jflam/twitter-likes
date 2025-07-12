@@ -232,13 +232,26 @@ Route::middleware(['cors'])->group(function () {
 });
 ```
 
-#### Safari Extension Manifest Permissions
+#### Safari Extension Manifest v3 Configuration
 ```json
 {
-  "permissions": [
+  "manifest_version": 3,
+  "name": "Twitter Likes Capture",
+  "version": "1.0",
+  "permissions": ["activeTab"],
+  "host_permissions": [
     "http://localhost:8000/*",
-    "https://localhost:8000/*"
-  ]
+    "https://localhost:8000/*",
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [{
+    "matches": ["https://x.com/*", "https://twitter.com/*"],
+    "js": ["content.js"]
+  }]
 }
 ```
 

@@ -62,9 +62,11 @@ A Safari browser extension written in plain JavaScript that automatically captur
 
 ## Requirements *(mandatory)*
 
-**Minimum Versions**: Safari 14+, macOS 11+, PHP 8.1+, Laravel 10+  
+**Minimum Versions**: Safari 14+, macOS 11+, PHP 8.2+, Laravel 12+  
 **Dependencies**: SQLite 3.8+, Laravel Framework only  
-**Technology Stack**: Plain JavaScript (Safari extension), Laravel 10 + SQLite, local file storage  
+**Technology Stack**: Plain JavaScript (Safari extension), Laravel 12 + SQLite, HTTP API communication  
+**Safari Extension**: Manifest v3 (cross-browser compatible, future-proof for Chrome v2 deprecation)  
+**Laravel Scaffolding**: `composer create-project laravel/laravel twitter-likes-backend`  
 **Feature Spec Alignment**: [x] All requirements addressed
 
 ---
@@ -253,7 +255,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
    Implement Artisan CLI commands: posts:process, posts:status, posts:export, posts:cleanup
    ```
    - Use Laravel migrations to match database contract exactly
-   - Configure CORS middleware for Safari extension origins (localhost:*, file://)
+   - Configure CORS middleware for Safari extension origins (install: `composer require fruitcake/laravel-cors`)
    - Implement API routes with validation and rate limiting
    - Implement CLI commands to pass interface contract tests
    - Add structured logging and error handling
@@ -314,7 +316,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
 ### Verification: Phase 2 Complete *(execution checkpoint)*
 - [ ] All tests passing (contract, integration, unit)
 - [ ] Manual testing completed successfully for all user stories
-- [ ] Performance metrics meet 3-second capture requirement
+- [ ] Performance metrics meet async response requirement
 - [ ] Documentation updated and accurate
 
 ---
@@ -324,7 +326,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
 1. **Constitutional**: All gates passed, no unjustified complexity
 2. **Functional**: All 16 functional requirements (FR-001 through FR-016) implemented and verified
 3. **Testing**: Contract tests verify database schema, integration tests verify extension ↔ Laravel communication
-4. **Performance**: Post capture completes within 3 seconds, 99% capture success rate achieved
+4. **Performance**: Like click triggers immediate async API call, 99% capture success rate achieved
 5. **Simplicity**: Two libraries only, direct framework usage, no unnecessary abstractions
 
 ---
@@ -349,7 +351,7 @@ A Safari browser extension written in plain JavaScript that automatically captur
 ### Risk Management
 - [x] Complex areas identified (Safari screenshot APIs, concurrent SQLite access)
 - [x] Integration points clearly defined (shared database, file communication)
-- [x] Performance requirements specified (3-second capture, 99% success rate)
+- [x] Performance requirements specified (async API calls, 99% success rate)
 - [x] Security considerations addressed (local-only data, input sanitization)
 
 ### Implementation Clarity
