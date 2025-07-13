@@ -15,7 +15,7 @@
 ### Backend Preparation
 ```bash
 # 1. Start Laravel backend
-cd laravel-backend
+cd laravel-backend-full
 php artisan serve --port=8000
 
 # 2. Verify database is ready
@@ -27,10 +27,23 @@ curl http://localhost:8000/api/posts/status
 ```
 
 ### Extension Installation
+**📋 See detailed setup instructions in `SAFARI_EXTENSION_SETUP.md`**
+
 1. Open Safari → Develop → Show Extension Builder
 2. Add extension from `safari-extension` folder
 3. Enable extension in Safari → Preferences → Extensions
-4. Verify extension icon appears in toolbar
+4. Verify extension loads without errors
+
+### Pre-Test Verification
+```bash
+# Backend health check
+curl http://localhost:8000/api/posts/status
+# Should return: {"status":"success","stats":{...},"server_status":"healthy"}
+
+# Test backend endpoints
+php artisan test tests/Feature/PostControllerTest.php
+# Should show: 10 passed tests
+```
 
 ---
 

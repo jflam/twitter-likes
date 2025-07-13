@@ -31,12 +31,6 @@
     "default_title": "Twitter Likes Capture"
   },
   
-  "icons": {
-    "16": "popup/icon-16.png",
-    "32": "popup/icon-32.png",
-    "48": "popup/icon-48.png",
-    "128": "popup/icon-128.png"
-  },
   
   "externally_connectable": {
     "matches": ["https://x.com/*", "https://twitter.com/*"]
