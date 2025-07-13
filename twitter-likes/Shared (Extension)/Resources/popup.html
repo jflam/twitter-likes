@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitter Likes Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <img src="icon-32.png" alt="Twitter Likes Capture" class="icon">
+        <h1>Twitter Likes</h1>
+      </div>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Checking...</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Statistics -->
+      <div class="stats-section">
+        <h2>Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" id="capturedCount">-</span>
+            <span class="stat-label">Captured</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="removedCount">-</span>
+            <span class="stat-label">Removed</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="errorCount">-</span>
+            <span class="stat-label">Errors</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-section">
+        <div class="control-item">
+          <label class="toggle">
+            <input type="checkbox" id="extensionEnabled">
+            <span class="slider"></span>
+          </label>
+          <span class="control-label">Enable Extension</span>
+        </div>
+        
+        <div class="control-item">
+          <label class="toggle">
+            <input type="checkbox" id="captureScreenshots">
+            <span class="slider"></span>
+          </label>
+          <span class="control-label">Capture Screenshots</span>
+        </div>
+        
+        <div class="control-item">
+          <label class="toggle">
+            <input type="checkbox" id="showNotifications">
+            <span class="slider"></span>
+          </label>
+          <span class="control-label">Show Notifications</span>
+        </div>
+      </div>
+
+      <!-- Backend Configuration -->
+      <div class="config-section">
+        <h2>Backend Configuration</h2>
+        <div class="input-group">
+          <label for="apiUrl">API URL:</label>
+          <input type="text" id="apiUrl" placeholder="http://localhost:8000/api">
+        </div>
+        <button id="testConnection" class="btn btn-secondary">Test Connection</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-section">
+        <button id="openDashboard" class="btn btn-primary">Open Dashboard</button>
+        <button id="exportData" class="btn btn-secondary">Export Data</button>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="last-activity">
+          Last activity: <span id="lastActivity">Never</span>
+        </div>
+        <div class="version">
+          Version <span id="version">1.0.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
