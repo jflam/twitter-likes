@@ -5,100 +5,118 @@
   'use strict';
   
   console.log('🎯 Like Button Debug Module Loaded at', new Date().toISOString());
+  console.log('DEBUG MODULE VERSION: 2.0 - MutationObserver approach');
   
-  // Verify we're on the right domain
-  console.log('🎯 Current URL:', window.location.href);
-  console.log('🎯 Domain:', window.location.hostname);
+  // Track buttons we've already attached listeners to
+  const processedButtons = new WeakSet();
   
-  // Check if we can find any buttons immediately
+  // Handler for like button clicks
+  function handleLikeButtonClick(e) {
+    const button = e.currentTarget;
+    const isLike = button.getAttribute('data-testid') === 'like';
+    const isUnlike = button.getAttribute('data-testid') === 'unlike';
+    
+    console.group(`🎯 ${isLike ? 'LIKE' : 'UNLIKE'} BUTTON CLICKED (Direct Handler)`);
+    console.log('Button:', button);
+    console.log('Aria-label:', button.getAttribute('aria-label'));
+    console.log('Event phase:', e.eventPhase === 1 ? 'CAPTURE' : e.eventPhase === 2 ? 'TARGET' : 'BUBBLE');
+    
+    // Extract tweet data
+    const tweetContainer = button.closest('[data-testid="tweet"]');
+    if (tweetContainer) {
+      console.log('📦 Tweet container found');
+      const timeElement = tweetContainer.querySelector('time[datetime]');
+      const tweetUrl = timeElement?.closest('a')?.getAttribute('href');
+      const tweetId = tweetUrl?.match(/\/status\/(\d+)/)?.[1];
+      console.log('Tweet ID:', tweetId || 'NOT FOUND');
+      
+      // Get tweet text
+      const tweetText = tweetContainer.querySelector('[data-testid="tweetText"]')?.textContent;
+      console.log('Tweet preview:', tweetText ? tweetText.substring(0, 50) + '...' : 'NO TEXT FOUND');
+    }
+    
+    console.groupEnd();
+    
+    // Don't stop propagation - let Twitter's handlers run too
+  }
+  
+  // Attach listeners directly to like/unlike buttons
+  function attachButtonListeners() {
+    // Find all like and unlike buttons
+    const buttons = document.querySelectorAll('[data-testid="like"], [data-testid="unlike"]');
+    let newButtonsCount = 0;
+    
+    buttons.forEach(button => {
+      if (!processedButtons.has(button)) {
+        // Mark as processed
+        processedButtons.add(button);
+        newButtonsCount++;
+        
+        // Add click listener directly to the button
+        // Use capture phase to get the event before Twitter's handlers
+        button.addEventListener('click', handleLikeButtonClick, true);
+        
+        // Also add to bubble phase as backup
+        button.addEventListener('click', handleLikeButtonClick, false);
+      }
+    });
+    
+    if (newButtonsCount > 0) {
+      console.log(`🎯 Attached listeners to ${newButtonsCount} new like/unlike buttons`);
+    }
+  }
+  
+  // Set up MutationObserver to watch for new buttons
+  const observer = new MutationObserver((mutations) => {
+    // Check if any mutations might have added new buttons
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        // New nodes added, check for buttons
+        attachButtonListeners();
+        break;
+      }
+    }
+  });
+  
+  // Start observing the entire document for changes
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Initial scan for buttons
   setTimeout(() => {
-    console.log('🎯 Initial button scan:');
+    console.log('🎯 Initial button scan...');
+    attachButtonListeners();
+    
     const likeButtons = document.querySelectorAll('[data-testid="like"]');
     const unlikeButtons = document.querySelectorAll('[data-testid="unlike"]');
-    console.log(`  - Found ${likeButtons.length} like buttons`);
-    console.log(`  - Found ${unlikeButtons.length} unlike buttons`);
-    
-    // Check for any tweets
-    const tweets = document.querySelectorAll('[data-testid="tweet"]');
-    console.log(`  - Found ${tweets.length} tweets on page`);
-    
-    // Log a sample button if found
-    if (likeButtons.length > 0) {
-      console.log('🎯 Sample like button:', likeButtons[0]);
-    }
-    if (unlikeButtons.length > 0) {
-      console.log('🎯 Sample unlike button:', unlikeButtons[0]);
-    }
-  }, 2000);
+    console.log(`🎯 Page has ${likeButtons.length} like buttons and ${unlikeButtons.length} unlike buttons`);
+  }, 1000);
   
-  // Track ALL clicks for debugging
-  let clickCount = 0;
-  document.addEventListener('click', function(e) {
-    clickCount++;
-    
-    // Log every 10th click to see if events are firing
-    if (clickCount % 10 === 0) {
-      console.log(`🎯 Debug: ${clickCount} clicks detected so far`);
-    }
-    
-    // Check for any data-testid attribute
-    const testId = e.target.getAttribute('data-testid');
-    if (testId) {
-      console.log('🎯 Clicked element with data-testid:', testId);
-    }
-    
-    const likeButton = e.target.closest('[data-testid="like"]');
-    const unlikeButton = e.target.closest('[data-testid="unlike"]');
-    
-    if (likeButton || unlikeButton) {
-      console.group('🎯 LIKE/UNLIKE BUTTON CLICK DETECTED');
-      console.log('Click target:', e.target);
-      console.log('Target tag:', e.target.tagName);
-      console.log('Target testid:', e.target.getAttribute('data-testid'));
-      
-      if (likeButton) {
-        console.log('✅ Like button found:', likeButton);
-        console.log('Button aria-label:', likeButton.getAttribute('aria-label'));
-        console.log('Button classes:', likeButton.className);
-      }
-      
-      if (unlikeButton) {
-        console.log('❤️ Unlike button found:', unlikeButton);
-        console.log('Button aria-label:', unlikeButton.getAttribute('aria-label'));
-        console.log('Button classes:', unlikeButton.className);
-      }
-      
-      const tweetContainer = (likeButton || unlikeButton).closest('[data-testid="tweet"]');
-      if (tweetContainer) {
-        console.log('📦 Tweet container found');
-        const timeElement = tweetContainer.querySelector('time[datetime]');
-        const tweetUrl = timeElement?.closest('a')?.getAttribute('href');
-        const tweetId = tweetUrl?.match(/\/status\/(\d+)/)?.[1];
-        console.log('Tweet ID:', tweetId || 'NOT FOUND');
-      } else {
-        console.log('❌ No tweet container found');
-      }
-      
-      console.groupEnd();
-    }
-  }, true); // Use capture phase to catch events early
-  
-  // Expose test function
+  // Expose debug functions
   window.testLikeDetection = function() {
-    console.log('🎯 Testing like button detection...');
+    console.log('🎯 Manual button scan...');
+    attachButtonListeners();
+    
     const likeButtons = document.querySelectorAll('[data-testid="like"]');
     const unlikeButtons = document.querySelectorAll('[data-testid="unlike"]');
     console.log(`Found ${likeButtons.length} like buttons and ${unlikeButtons.length} unlike buttons`);
     
-    // Show first few buttons for inspection
-    if (likeButtons.length > 0) {
-      console.log('First like button:', likeButtons[0]);
-      console.log('Parent structure:', likeButtons[0].parentElement);
-    }
-    
     return { likeButtons, unlikeButtons };
   };
   
-  console.log('🎯 Debug module ready. Run testLikeDetection() to scan for buttons.');
+  window.debugButtonClick = function(buttonIndex = 0) {
+    const buttons = document.querySelectorAll('[data-testid="like"], [data-testid="unlike"]');
+    if (buttons[buttonIndex]) {
+      console.log('🎯 Simulating click on button:', buttons[buttonIndex]);
+      buttons[buttonIndex].click();
+    } else {
+      console.log('❌ No button at index', buttonIndex);
+    }
+  };
+  
+  console.log('🎯 Like detection ready. Using MutationObserver + direct button listeners.');
+  console.log('🎯 Debug functions: testLikeDetection(), debugButtonClick(index)');
   
 })();

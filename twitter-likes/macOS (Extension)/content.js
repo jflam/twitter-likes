@@ -2,6 +2,8 @@
 // Detects like/unlike actions and extracts tweet data
 
 console.log('Twitter Likes Capture extension loaded');
+console.log('CONTENT.JS VERSION: 2.0 - Direct Button Listeners');
+console.log('LOADED AT:', new Date().toISOString());
 
 // Configuration
 const CONFIG = {
@@ -359,44 +361,84 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
-// Main event listener for like/unlike detection
-document.addEventListener('click', async function(e) {
-  const likeButton = e.target.closest('[data-testid="like"]');
-  const unlikeButton = e.target.closest('[data-testid="unlike"]');
+// Track buttons we've already attached listeners to
+const processedButtons = new WeakSet();
+
+// Main handler for like/unlike button clicks
+async function handleButtonClick(e) {
+  const button = e.currentTarget;
+  const isLike = button.getAttribute('data-testid') === 'like';
+  const isUnlike = button.getAttribute('data-testid') === 'unlike';
   
-  if (likeButton) {
+  if (isLike) {
     debugLog('Like action detected - capturing tweet data');
     
     // Small delay to allow UI to update
     setTimeout(async () => {
       console.log('🔄 Starting tweet data extraction...');
-      const tweetData = extractTweetData(likeButton);
+      const tweetData = extractTweetData(button);
       console.log('🔍 Tweet data extraction result:', tweetData);
       
       if (tweetData) {
         console.log('✅ Tweet data extracted successfully, capturing screenshot...');
         // Add screenshot if possible
-        const screenshotData = await captureScreenshot(likeButton.closest('[data-testid="tweet"]'));
+        const screenshotData = await captureScreenshot(button.closest('[data-testid="tweet"]'));
         Object.assign(tweetData, screenshotData);
         console.log('📸 Screenshot captured, sending to API...');
         
         await sendToLaravelAPI(tweetData);
       } else {
         console.warn('❌ Failed to extract tweet data from like button');
-        console.log('🔍 Debugging - likeButton element:', likeButton);
-        console.log('🔍 Debugging - tweet container:', likeButton.closest('[data-testid="tweet"]'));
+        console.log('🔍 Debugging - likeButton element:', button);
+        console.log('🔍 Debugging - tweet container:', button.closest('[data-testid="tweet"]'));
       }
     }, 100);
     
-  } else if (unlikeButton) {
+  } else if (isUnlike) {
     debugLog('Unlike action detected - processing removal');
     
     // Small delay to ensure this is really an unlike
     setTimeout(async () => {
-      await handleUnlikeAction(unlikeButton.closest('[data-testid="tweet"]'));
+      await handleUnlikeAction(button.closest('[data-testid="tweet"]'));
     }, 100);
   }
+}
+
+// Attach listeners directly to like/unlike buttons
+function attachButtonListeners() {
+  const buttons = document.querySelectorAll('[data-testid="like"], [data-testid="unlike"]');
+  let newButtonsCount = 0;
+  
+  buttons.forEach(button => {
+    if (!processedButtons.has(button)) {
+      processedButtons.add(button);
+      newButtonsCount++;
+      
+      // Add click listener directly to button (capture phase first)
+      button.addEventListener('click', handleButtonClick, true);
+    }
+  });
+  
+  if (newButtonsCount > 0) {
+    debugLog(`Attached listeners to ${newButtonsCount} new like/unlike buttons`);
+  }
+}
+
+// Set up MutationObserver to watch for new buttons
+const observer = new MutationObserver((mutations) => {
+  // Debounce to avoid excessive processing
+  clearTimeout(observer.timeout);
+  observer.timeout = setTimeout(attachButtonListeners, 100);
 });
+
+// Start observing
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+
+// Initial scan
+setTimeout(attachButtonListeners, 1000);
 
 // Initialize extension
 debugLog('Content script initialized');
@@ -459,6 +501,14 @@ async function testConnection() {
 
 // Initialize connection test
 testConnection();
+
+// CRITICAL TEST: Expose version info globally
+window.TWITTER_LIKES_VERSION = {
+  content: '2.0',
+  timestamp: new Date().toISOString(),
+  hasDebugModule: typeof testLikeDetection !== 'undefined'
+};
+console.log('Extension version info available at window.TWITTER_LIKES_VERSION');
 
 // Debug helpers - expose globally for console access
 window.TwitterLikesDebug = {
