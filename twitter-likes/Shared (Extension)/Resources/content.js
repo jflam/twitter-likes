@@ -1,15 +1,16 @@
 // Twitter Likes Capture - Content Script
 // Detects like/unlike actions and extracts tweet data
 
-console.log('Twitter Likes Capture extension loaded');
-console.log('CONTENT.JS VERSION: 2.0 - Direct Button Listeners');
-console.log('LOADED AT:', new Date().toISOString());
+console.log('🚀 TWITTER LIKES CAPTURE - CONTENT.JS LOADED');
+console.log('📌 VERSION: 1.0.2');
+console.log('📅 LOADED AT:', new Date().toISOString());
+console.log('🔗 API BASE URL: https://twitter-likes.test/api');
 
 // Configuration
 const CONFIG = {
   API_BASE_URL: 'https://twitter-likes.test/api', // Use Valet URL if available
   FALLBACK_URL: 'https://localhost:8000/api',      // Fallback for mkcert
-  EXTENSION_VERSION: '1.0.0',
+  EXTENSION_VERSION: '1.0.2',
   DEBUG: true,
   VERBOSE_LOGGING: true,  // Set to false to disable verbose API logging
   LOG_REQUESTS: true,     // Log outbound API requests
@@ -224,9 +225,12 @@ async function sendToLaravelAPI(tweetData) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
       },
-      body: JSON.stringify(tweetData)
+      body: JSON.stringify(tweetData),
+      cache: 'no-store'  // Safari-specific cache bypass
     };
 
     logRequest(requestUrl, requestOptions, 'CAPTURE POST');
@@ -294,9 +298,12 @@ async function handleUnlikeAction(tweetContainer) {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
       },
-      body: JSON.stringify({ tweet_id: tweetId })
+      body: JSON.stringify({ tweet_id: tweetId }),
+      cache: 'no-store'  // Safari-specific cache bypass
     };
 
     logRequest(requestUrl, requestOptions, 'UNLIKE POST');
@@ -480,8 +487,11 @@ async function testConnection() {
     const requestOptions = {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
-      }
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      },
+      cache: 'no-store'  // Safari-specific cache bypass
     };
 
     logRequest(requestUrl, requestOptions, 'TEST CONNECTION');

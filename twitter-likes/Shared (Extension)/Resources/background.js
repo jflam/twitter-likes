@@ -6,8 +6,12 @@ console.log('Twitter Likes Capture background script loaded');
 // Extension configuration
 const CONFIG = {
   API_BASE_URL: 'https://twitter-likes.test/api',
-  EXTENSION_VERSION: '1.0.0'
+  EXTENSION_VERSION: '1.0.2'
 };
+
+console.log('🚀 BACKGROUND.JS LOADED - VERSION:', CONFIG.EXTENSION_VERSION);
+console.log('📅 LOADED AT:', new Date().toISOString());
+console.log('🔗 API URL:', CONFIG.API_BASE_URL);
 
 // Handle extension installation
 chrome.runtime.onInstalled.addListener((details) => {

@@ -1,8 +1,11 @@
 // Twitter Likes Capture - Popup Script
 // Handles popup UI interactions and communication with background script
 
+const POPUP_VERSION = '1.0.2';
+
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('Popup loaded');
+  console.log('🚀 POPUP.JS LOADED - VERSION:', POPUP_VERSION);
+  console.log('📅 LOADED AT:', new Date().toISOString());
   
   // Initialize popup
   await loadExtensionStatus();
@@ -39,7 +42,7 @@ function updateUI(status) {
   document.getElementById('apiUrl').value = settings.apiUrl || 'http://localhost:8000/api';
   
   // Update footer
-  document.getElementById('version').textContent = version;
+  document.getElementById('version').textContent = POPUP_VERSION;
   if (stats.lastActivity) {
     const lastActivity = new Date(stats.lastActivity);
     document.getElementById('lastActivity').textContent = formatRelativeTime(lastActivity);

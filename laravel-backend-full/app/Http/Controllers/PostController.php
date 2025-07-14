@@ -11,11 +11,20 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
     public function capture(Request $request)
     {
+        Log::info('PostController::capture called', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'headers' => $request->headers->all(),
+            'body' => $request->all(),
+            'ip' => $request->ip()
+        ]);
+        
         $validator = Validator::make($request->all(), [
             'tweet_id' => 'required|string|unique:liked_posts,tweet_id',
             'author_username' => 'required|string',
@@ -42,6 +51,11 @@ class PostController extends Controller
         ]);
 
         if ($validator->fails()) {
+            Log::warning('PostController::capture validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'input' => $request->all()
+            ]);
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation failed',
@@ -52,14 +66,20 @@ class PostController extends Controller
 
         try {
             DB::beginTransaction();
+            
+            Log::info('PostController::capture starting transaction');
 
             $postData = $request->only([
                 'tweet_id', 'author_username', 'author_display_name', 'author_avatar_url',
                 'content_text', 'content_html', 'post_url', 'posted_at', 'liked_at',
                 'post_type', 'reply_count', 'retweet_count', 'like_count', 'view_count'
             ]);
+            
+            Log::info('PostController::capture creating LikedPost', ['data' => $postData]);
 
             $likedPost = LikedPost::create($postData);
+            
+            Log::info('PostController::capture LikedPost created', ['id' => $likedPost->id]);
 
             $screenshotSaved = false;
             if ($request->has('screenshot_base64') && !empty($request->screenshot_base64)) {
@@ -72,6 +92,12 @@ class PostController extends Controller
             }
 
             DB::commit();
+            
+            Log::info('PostController::capture transaction committed successfully', [
+                'post_id' => $likedPost->id,
+                'screenshot_saved' => $screenshotSaved,
+                'thread_relationships' => $threadRelationshipsCreated
+            ]);
 
             return response()->json([
                 'status' => 'success',
@@ -82,6 +108,12 @@ class PostController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            Log::error('PostController::capture failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->all()
+            ]);
             
             return response()->json([
                 'status' => 'error',

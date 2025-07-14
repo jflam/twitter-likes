@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Twitter Likes Capture",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automatically captures Twitter/X posts when you like them for personal analysis and memory",
   
   "permissions": [
